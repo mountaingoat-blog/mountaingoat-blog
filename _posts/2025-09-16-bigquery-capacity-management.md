@@ -27,7 +27,7 @@ This creates two clear categories:
 ## Step 2: Defining the Baseline
 Once workloads are classified, the next step is to define a **baseline**: the steady capacity that can safely be committed without fear of waste.  
 
-Instead of guessing, organizations often use **percentile-based thresholds**:  
+Instead of guessing, organizations can use **percentile-based thresholds**:  
 - Baseline commitments around the **60th–70th percentile** of historical usage.  
 - Autoscaling to cover **peaks up to the 90th–95th percentile**.  
 - Extreme spikes above the 99th percentile are tolerated with autoscale only.  
