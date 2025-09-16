@@ -1,7 +1,7 @@
 ---
 title: "Building Enterprise-Ready Apache NiFi"
 date: 2025-09-16
-tags: [Apache NiFi, Open Source, Data Engineering, FinOps, Cloud, Automation, OpenShift, Shell Scripting, Cost Optimization]
+tags: [Apache NiFi, Open Source, Data Engineering, Cloud, Automation, OpenShift, Shell Scripting, Cost Optimization]
 ---
 
 # 🚀 Building Enterprise-Ready Apache NiFi  
@@ -53,7 +53,7 @@ Over the past few months, I’ve been deeply engaged with **Apache NiFi** – no
   - **Estimated savings**:  
     - **30–50% reduction** in infra footprint compared to static VM/server model.  
     - Example: If legacy infra costs $150K/year, containerized NiFi can bring it down to ~$75K–$100K/year.  
-	- Containerized NiFi + FinOps can reduce **overall infra & cloud spend by 20–40%**.  
+	- Containerized NiFi can reduce **overall infra spend by 20–40%**.  
 
 ---
 
@@ -65,8 +65,6 @@ My focus has been on:
 - **Security** → fixing vulnerabilities before deployment  
 - **Scalability** → containerized deployment on OpenShift  
 - **Customization** → new processors and automation scripts  
-- **Cost Efficiency** → connecting NiFi to FinOps practices for **cloud cost governance**  
-
 ---
 
 ## 🔭 The Road Ahead  
