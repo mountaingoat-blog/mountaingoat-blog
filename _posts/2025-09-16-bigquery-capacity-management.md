@@ -13,8 +13,8 @@ The real challenge lies in finding a middle path.
 Not all workloads are alike. Some run with clockwork regularity, consuming a steady number of slots every day. Others stay quiet most of the time, only to surge suddenly and demand far more than expected.
 
 This creates two clear categories:  
-- **Stable workloads** → predictable, low variance, good candidates for committed slots.  
-- **Bursty workloads** → variable, spiky, better left to autoscale.  
+- **Stable workloads** → predictable, low variance (use standard deviation to find the variability), good candidates for committed slots.  
+- **Bursty workloads** → High variance(use standard deviation to find the variability), spiky, better left to autoscale.  
 
 By classifying workloads this way, the decision-making framework starts to emerge.
 
@@ -43,7 +43,7 @@ The key is to measure both **duration** and **frequency**. A burst that happens 
 ---
 
 ## Step 4: Adding Governance
-Technology decisions are only half the story — governance makes the system sustainable.  
+Statistical & Technology decisions are only half the story — governance makes the system sustainable.  
 
 Policies and rules keep costs predictable without constant human oversight:  
 - **Quotas** to prevent runaway queries.  
@@ -58,7 +58,7 @@ These rules make sure commitments and autoscale remain aligned with actual behav
 ## Step 5: Forecasting for Growth
 Capacity isn’t static. Data pipelines expand, new use cases appear, and demand grows steadily over time.  
 
-Using **time-series forecasting**, organizations can project future slot demand and adjust commitments accordingly. Adding a **10–20% buffer** for new workloads keeps the system resilient without overcommitting.  
+Using **time-series forecasting**,**percentile-based capacity planning**, organizations can project future slot demand and adjust commitments accordingly. Adding a **10–20% buffer** for new workloads keeps the system resilient without overcommitting.  
 
 Regular reviews — every quarter or even monthly — ensure that baseline commitments evolve with usage.
 
