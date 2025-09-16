@@ -14,7 +14,7 @@ Over the past few months, I’ve been deeply engaged with **Apache NiFi** – no
 
 - 📥 **Setup & Analysis**  
   - Downloaded and worked on **Apache NiFi v2.1**.  
-  - Performed a **FOSA (Free and Open Source Software Analysis)** to identify vulnerabilities.  
+  - Performed a **FOSSA (Free and Open Source Software Analysis)** to identify vulnerabilities.  
 
 - 🛡️ **Security & Hardening**  
   - Investigated vulnerabilities and started working on **fixes**.  
