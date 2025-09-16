@@ -94,13 +94,13 @@ This balance gives finance predictable budgets while giving engineering the elas
 ---
 
 ## Conclusion
-Based on the analysis work, I've framed a structured, rule-based approach to BigQuery capacity management. This is an **early perspective** that should be studied further and adapted to each organization’s unique workload patterns.
+Based on the analysis, it’s clear that time-series forecasting is only a starting point rather than a complete solution. I’ve outlined a structured, rule-based approach to BigQuery capacity management that provides an initial framework. This perspective is still evolving and should be further validated and tailored to align with each organization’s unique workload patterns.
 
 The result is a system where:  
 - **Stable workloads** are cost-efficient through commitments.  
 - **Bursty workloads** flex through autoscale.  
 - **Governance and forecasting** keep the system predictable.  
 
-This is where **FinOps meets engineering** — turning BigQuery from guesswork into a framework for growth.
+This is where **Engineering meets FinOps** — turning BigQuery Optimization from guesswork into a framework for growth.
 
 It's an evolving space!!
