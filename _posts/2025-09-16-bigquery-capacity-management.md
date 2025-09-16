@@ -15,8 +15,8 @@ It requires **analyzing workloads, predicting demand, and applying rule-based go
 Not all workloads are alike. Some run with clockwork regularity, consuming a steady number of slots every day. Others stay quiet most of the time, only to surge suddenly and demand far more than expected.
 
 This creates two clear categories:  
-- **Stable workloads** → predictable, low variance, good candidates for committed slots.  
-- **Bursty workloads** → variable, spiky, better left to autoscale.  
+- **Stable workloads** → predictable, low variance (low stddev), good candidates for committed slots.  
+- **Bursty workloads** → High variance (High stddev), spiky, better left to autoscale.  
 
 <div style="text-align: center;">
   <img src="/images/bq/stable-vs-bursty.png" alt="Stable vs Bursty Workloads" width="600">
@@ -68,7 +68,7 @@ Policies and rules keep costs predictable without constant human oversight:
 ## Step 5: Forecasting for Growth
 Capacity isn’t static. Data pipelines expand, new use cases appear, and demand grows steadily over time.  
 
-Using **time-series forecasting**, organizations can project future slot demand and adjust commitments accordingly. Adding a **10–20% buffer** for new workloads keeps the system resilient without overcommitting.  
+Using **time-series forecasting**, organizations can project future slot demand and adjust commitments accordingly. Adding a **a calibrated buffer** for new workloads keeps the system resilient without overcommitting.  
 
 Regular reviews — every quarter or even monthly — ensure that baseline commitments evolve with usage.
 
