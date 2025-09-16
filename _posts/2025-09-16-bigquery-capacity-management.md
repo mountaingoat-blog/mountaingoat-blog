@@ -76,7 +76,7 @@ This balance gives finance predictable budgets while giving engineering the elas
 ---
 
 ## The Outcome
-By following this journey, organizations transform BigQuery capacity management from guesswork into a **structured, rule-based system**:  
+This analysis helped me quickly frame a rule-based view of BigQuery capacity management. While this provides a strong starting point, it should be studied further and adapted to each organization’s unique workload patterns. **structured, rule-based system**:  
 
 - **Stable workloads** → covered by commitments.  
 - **Bursty workloads** → absorbed by autoscale.  
