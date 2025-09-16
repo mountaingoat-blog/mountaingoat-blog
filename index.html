@@ -1,2 +1,171 @@
-<h1>Hello from Mountain Goat</h1>
-<p>Blog coming soon...</p>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mountain Goat — Engineering Blog</title>
+  <meta name="description" content="Architecture, engineering notes, and practical how-tos from SivaAnanth." />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0f1724;
+      --card:#0b1220;
+      --muted:#9aa6b2;
+      --accent:#7bd389;
+      --glass: rgba(255,255,255,0.03);
+      --maxw:1100px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;color:#e8eef6;background:linear-gradient(180deg,#071028 0%, #071827 60%);}
+    a{color:var(--accent);text-decoration:none}
+    .wrap{max-width:var(--maxw);margin:36px auto;padding:0 18px;}
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{
+      width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,#9bd7ff,#cfeee6);
+      display:flex;align-items:center;justify-content:center;color:#06202c;font-weight:700;font-size:18px;box-shadow:0 6px 20px rgba(5,10,20,0.6);
+    }
+    .title h1{margin:0;font-size:18px;color:#fff;letter-spacing:0.2px}
+    .title p{margin:0;font-size:13px;color:var(--muted)}
+    nav a{margin-left:16px;font-weight:600;color:#cfe7ff;opacity:0.95}
+    /* Hero */
+    .hero{display:grid;grid-template-columns:1fr 380px;gap:28px;align-items:center;margin:38px 0}
+    .hero .left h2{font-size:36px;margin:0 0 12px;color:#fff;line-height:1.05}
+    .hero .left p{color:var(--muted);margin:0 0 18px}
+    .cta{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--accent);color:#042022;font-weight:700;text-decoration:none}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));padding:18px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,12,0.6);border:1px solid rgba(255,255,255,0.03)}
+    /* featured */
+    .features{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-top:20px}
+    .post{padding:14px;border-radius:10px;background:var(--card);border:1px solid rgba(255,255,255,0.02)}
+    .post h3{margin:0 0 6px;font-size:16px}
+    .meta{font-size:13px;color:var(--muted)}
+    /* about / contact */
+    .grid-2{display:grid;grid-template-columns:1fr 340px;gap:18px;margin-top:28px}
+    footer{margin:36px 0;color:var(--muted);text-align:center;font-size:14px}
+    /* small */
+    @media (max-width:880px){
+      .hero{grid-template-columns:1fr; padding-bottom:6px}
+      .grid-2{grid-template-columns:1fr}
+      nav a{display:none}
+    }
+    /* subtle accent underline */
+    .brand .logo small{font-size:10px;opacity:0.9}
+    .tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .tag{background:var(--glass);padding:6px 10px;border-radius:999px;font-size:13px;color:var(--muted);border:1px solid rgba(255,255,255,0.02)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo">MG</div>
+        <div class="title">
+          <h1>Mountain Goat</h1>
+          <p>Engineering stories • architecture • tools</p>
+        </div>
+      </div>
+
+      <nav>
+        <a href="/posts/">Posts</a>
+        <a href="/bq_finops">FinOps</a>
+        <a href="/nifi_demo">NiFi</a>
+        <a href="mailto:siva@mountaingoat.in">Contact</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div class="left">
+        <h2>Practical engineering notes, code, and architecture write-ups.</h2>
+        <p>My short guides, postmortems, and engineering experiments — focused on reliability, data systems, and practical automation. Fresh posts every few weeks.</p>
+        <div style="margin-top:14px">
+          <a class="cta" href="/posts/">Read latest</a>
+          <a class="cta" href="mailto:siva@mountaingoat.in" style="background:transparent;border:1px solid rgba(255,255,255,0.06;color:#cfe7ff;margin-left:8px">Get in touch</a>
+        </div>
+
+        <div class="tags" aria-hidden="true">
+          <span class="tag">Apache NiFi</span>
+          <span class="tag">FinOps</span>
+          <span class="tag">Containers</span>
+          <span class="tag">Automation</span>
+        </div>
+      </div>
+
+      <aside class="card">
+        <h4 style="margin:0 0 8px">Featured</h4>
+        <p style="margin:0 0 12px;color:var(--muted)">A quick look at a recent post and a short project highlight.</p>
+
+        <div style="display:flex;gap:10px">
+          <div style="flex:1">
+            <strong style="display:block">Containerizing Apache NiFi</strong>
+            <div class="meta">Short note · 12 Sep 2025</div>
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.02);margin:12px 0">
+
+        <div style="display:flex;gap:10px;align-items:center">
+          <div style="width:56px;height:56px;border-radius:8px;background:linear-gradient(135deg,#ffdba6,#fce6c4);display:flex;align-items:center;justify-content:center;font-weight:700;color:#2b1600">Ni</div>
+          <div>
+            <div style="font-weight:700">NiFi Workshop</div>
+            <div class="meta">Demo + repo</div>
+          </div>
+        </div>
+
+      </aside>
+    </section>
+
+    <section class="card" style="margin-top:18px">
+      <h3 style="margin:0 0 12px">Latest posts</h3>
+      <div class="features">
+        <article class="post">
+          <h3><a href="/posts/containerizing-nifi/">Containerizing Apache NiFi — the pragmatic way</a></h3>
+          <div class="meta">Architecture · 12 Sep 2025</div>
+          <p style="color:var(--muted);margin-top:10px">A step-by-step case study covering Docker, systemd, and production configs I used to run NiFi at scale.</p>
+        </article>
+
+        <article class="post">
+          <h3><a href="/posts/bq-finops-guide/">BigQuery FinOps: Practical audits & cost controls</a></h3>
+          <div class="meta">FinOps · 05 Sep 2025</div>
+          <p style="color:var(--muted);margin-top:10px">How I audited a data pipeline, identified cost hot-spots, and applied automated rules to save costs.</p>
+        </article>
+
+        <article class="post">
+          <h3><a href="/posts/terraform-ci/">CI for infra: Terraform and pipelines</a></h3>
+          <div class="meta">Infrastructure · 22 Aug 2025</div>
+          <p style="color:var(--muted);margin-top:10px">An opinionated CI pattern for Terraform with policy checks, plan storage and automated apply gating.</p>
+        </article>
+      </div>
+    </section>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3 style="margin-top:0">About this site</h3>
+        <p style="color:var(--muted)">I publish architecture notes, how-tos, and short postmortems focused on reliability, data systems, and engineering leadership. The goal is practical — include reproducible code, diagrams, and linked repos.</p>
+
+        <h4 style="margin-top:12px">Favourite things I write about</h4>
+        <ul style="color:var(--muted);margin:8px 0 0 20px">
+          <li>Designing resilient data pipelines</li>
+          <li>Operationalizing open-source tools</li>
+          <li>Cost-aware engineering (FinOps)</li>
+          <li>Small, reliable automation pieces</li>
+        </ul>
+      </div>
+
+      <aside class="card">
+        <h3 style="margin-top:0">Contact</h3>
+        <p style="color:var(--muted)">Email: <a href="mailto:siva@mountaingoat.in">siva@mountaingoat.in</a></p>
+        <p style="color:var(--muted);margin-top:8px">Quick links</p>
+        <p style="margin:6px 0"><a href="https://github.com/mountaingoat-blog" target="_blank" rel="noreferrer">GitHub</a></p>
+        <p style="margin:6px 0"><a href="https://www.linkedin.com/in/yourprofile" target="_blank" rel="noreferrer">LinkedIn</a></p>
+      </aside>
+    </div>
+
+    <footer>
+      © <span id="yr"></span> Mountain Goat — <a href="https://mountaingoat.in">mountaingoat.in</a>
+    </footer>
+  </div>
+
+  <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+</body>
+</html>
