@@ -1,0 +1,8 @@
+title: "Mountain Goat"
+description: "Engineering stories — architecture, tools, and case studies by SivaAnanth."
+baseurl: ""          
+url: "https://mountaingoat.in"
+email: "siva@mountaingoat.in"
+
+markdown: kramdown
+theme: minima
