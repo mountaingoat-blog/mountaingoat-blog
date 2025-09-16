@@ -19,7 +19,7 @@ This creates two clear categories:
 - **Bursty workloads** → variable, spiky, better left to autoscale.  
 
 <div style="text-align: center;">
-  <img src="/images/stable-vs-bursty.png" alt="Stable vs Bursty Workloads" width="600">
+  <img src="/images/bq/stable-vs-bursty.png" alt="Stable vs Bursty Workloads" width="600">
 </div>
 
 ---
@@ -35,7 +35,7 @@ Instead of guessing, organizations often use **percentile-based thresholds**:
 This ensures the majority of usage is locked in at a discount, while peaks remain flexible.
 
 <div style="text-align: center;">
-  <img src="/images/autoscale-vs-commit.png" alt="Cost Tradeoff: Autoscale vs Commitment" width="600">
+  <img src="/images/bq/autoscale-vs-commit.png" alt="Cost Tradeoff: Autoscale vs Commitment" width="600">
 </div>
 
 ---
@@ -49,7 +49,7 @@ Bursts are where costs can spiral. But not all bursts are created equal.
 The key is to measure both **duration** and **frequency**. A burst that happens every day for hours is very different from one that happens once a month for minutes.
 
 <div style="text-align: center;">
-  <img src="/images/wd2-categorization.png" alt="Bursty Workload Categorization (WD2)" width="600">
+  <img src="/images/bq/wd2-categorization.png" alt="Bursty Workload Categorization (WD2)" width="600">
 </div>
 
 ---
@@ -73,11 +73,11 @@ Using **time-series forecasting**, organizations can project future slot demand 
 Regular reviews — every quarter or even monthly — ensure that baseline commitments evolve with usage.
 
 <div style="text-align: center;">
-  <img src="/images/wd1-forecast.png" alt="Stable Workload Forecast (WD1)" width="600">
+  <img src="/images/bq/wd1-forecast.png" alt="Stable Workload Forecast (WD1)" width="600">
 </div>
 
 <div style="text-align: center;">
-  <img src="/images/wd1-variability.png" alt="Stable Workload Variability (WD1)" width="600">
+  <img src="/images/bq/wd1-variability.png" alt="Stable Workload Variability (WD1)" width="600">
 </div>
 
 ---
