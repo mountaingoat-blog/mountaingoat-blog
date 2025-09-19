@@ -65,6 +65,6 @@ Imagine two workloads (or assets):
 
 Both have the same mean, but **their management strategy must be very different**.  
 
-That’s why standard deviation is a cornerstone metric in both **cloud capacity management** and **financial forecasting**.  
+That’s why standard deviation is a cornerstone metric
 
 ---
