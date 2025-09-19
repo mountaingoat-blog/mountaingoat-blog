@@ -30,8 +30,6 @@ This setup is, of course, a single point of failure, but it served well for expe
 - **k8s-worker2 (worker VM)** — 2 GB RAM, 1 vCPU, 30 GB disk: runs `kubelet`, `kube-proxy`, container workloads.  
 - **CNI** — Flannel (`10.244.0.0/16`) connecting all nodes.
 
-> If your site serves images from a different base path (for example posts/img or /assets/images), update the image path above accordingly.
-
 ---
 
 ## Challenges Faced
@@ -109,3 +107,4 @@ sudo systemctl restart containerd kubelet
 
 # deploy CNI (after API server healthy)
 kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+```
