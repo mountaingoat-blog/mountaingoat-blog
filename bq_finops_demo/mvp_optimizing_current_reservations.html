@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FinOps — BigQuery Slot Optimization (Mock)</title>
+  <style>
+    :root { --bg:#0f172a; --card:#0b1220; --accent:#06b6d4; --muted:#94a3b8; }
+    body{font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,#041028 0%, #071126 100%);color:#e6eef8;margin:0;padding:24px;overflow-x:hidden}
+    .container{max-width:1400px;margin:0 auto}
+    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+    h1{color:#fff;margin:0;font-size:22px}
+    .controls{display:flex;gap:10px;align-items:center}
+    .card{background:rgba(255,255,255,0.03);border-radius:12px;padding:16px;color:#dbeafe;box-shadow:0 4px 18px rgba(2,6,23,0.6)}
+    .layout{display:grid;grid-template-columns:65% 35%;gap:20px;align-items:start}
+    .left-column{display:flex;flex-direction:column;gap:18px;min-width:0}
+    .wide-chart{height:340px}
+    .bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:18px;min-width:0}
+    .chart-canvas{background:#0b1220;border-radius:8px;padding:10px;display:block;width:100%;height:100%}
+    .muted{color:var(--muted);font-size:13px}
+    .big-number{font-size:20px;font-weight:700;color:#fff}
+    .legend-box{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px}
+    .legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+    .legend-color{width:18px;height:3px;border-radius:2px}
+    .btn{background:linear-gradient(90deg,var(--accent),#0ea5a6);padding:8px 12px;border-radius:8px;color:#012;cursor:pointer;border:none;font-weight:600}
+    aside.card{overflow:hidden}
+    select,input{background:#071126;color:#e6eef8;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:6px}
+    .card strong{display:block;margin-bottom:6px;font-size:15px}
+    /* make canvases constrained so no overflow */
+    .chart-canvas{min-height:60px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>FinOps — BigQuery Slot Optimization</h1>
+        <div class="small">Brute Sweep (cost) vs Newsvendor (SLA) — recommendation preview</div>
+      </div>
+      <div class="controls">
+        <label class="small muted" for="binSelect" style="margin-right:6px">Bin</label>
+        <select id="binSelect">
+          <option value="raw">Raw slots</option>
+          <option value="bucket500">Buckets of 500</option>
+          <option value="bucket1000">Buckets of 1000</option>
+        </select>
+
+        <label class="small muted" for="daySelect" style="margin-left:10px;margin-right:6px">Days</label>
+        <select id="daySelect">
+          <option value="30">Last 30 days</option>
+          <option value="60">Last 60 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="180">Last 180 days</option>
+          <option value="365">Last 365 days</option>
+        </select>
+
+        <select id="reservationSelect"><option>demo-reservation</option></select>
+        <button class="btn" id="refreshBtn">Refresh</button>
+      </div>
+    </header>
+
+    <section class="layout">
+      <div class="left-column">
+        <div class="card wide-chart" style="height:360px;display:flex;flex-direction:column;">
+          <strong>Slot demand (minute-level data)</strong>
+          <div class="small muted">Data window: sample minutes</div>
+          <div style="flex:1;display:flex;align-items:stretch;margin-top:10px;min-height:0">
+            <canvas id="demandChart" class="chart-canvas"></canvas>
+          </div>
+          <div class="legend-box" id="demandLegend">
+            <div class="legend-item"><div class="legend-color" style="background:#f97316"></div> Used Slots</div>
+            <div class="legend-item"><div class="legend-color" style="border-top:2px dashed #58c98a"></div> Brute Sweep (4000)</div>
+            <div class="legend-item"><div class="legend-color" style="border-top:2px dashed #ffaf33"></div> Newsvendor (4500)</div>
+            <div class="legend-item"><div class="legend-color" style="border-top:2px dashed #ff453a"></div> Current Baseline (4400)</div>
+          </div>
+        </div>
+
+        <div class="bottom-row">
+          <div class="card" style="height:260px;display:flex;flex-direction:column;min-width:0">
+            <strong>Slot usage distribution — seconds per slot</strong>
+            <div class="small muted">Aggregated seconds observed per slot value</div>
+            <div style="flex:1;display:flex;align-items:stretch;margin-top:10px;min-height:0"><canvas id="histogramChart" class="chart-canvas"></canvas></div>
+          </div>
+
+          <div class="card" style="height:260px;display:flex;flex-direction:column;min-width:0">
+            <strong>Brute-force Sweep — Cost vs Baseline</strong>
+            <div class="small muted">Choose baseline to minimise yearly spend (committed + autoscale)</div>
+            <div style="flex:1;display:flex;align-items:stretch;margin-top:10px;min-height:0"><canvas id="sweepChart" class="chart-canvas"></canvas></div>
+            <div class="small" style="margin-top:12px">Committed cost: $0.036/hr · Autoscale: $0.06/hr</div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="card" style="min-height:460px;display:flex;flex-direction:column;gap:14px;padding:18px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:46px;height:46px;border-radius:10px;background:linear-gradient(180deg,#083049,#054a57);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff">F</div>
+              <div>
+                <div style="font-size:14px;font-weight:700;color:#fff">Recommendation</div>
+                <div class="small" style="margin-top:2px;color:var(--muted)">Compare options below</div>
+              </div>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div class="small" style="color:var(--muted)">Current baseline</div>
+            <div style="font-weight:800;font-size:18px;color:#ff453a">4400 slots</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:stretch;flex-wrap:wrap">
+          <div style="flex:1;min-width:140px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));padding:12px;border-radius:10px">
+            <div class="small" style="color:var(--muted)">Brute-sweep optimum</div>
+            <div style="font-size:22px;font-weight:800;color:#4ade80">4000</div>
+            <div class="small" style="margin-top:6px;color:var(--muted)">Cost-first: lowest projected spend</div>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:10px">
+              <input type="radio" name="optChoice" value="sweep" checked>
+              <span class="small" style="color:var(--muted)">Choose Brute</span>
+            </label>
+          </div>
+
+          <div style="flex:1;min-width:140px;background:linear-gradient(180deg,rgba(255,255,255,0.015),rgba(255,255,255,0.01));padding:12px;border-radius:10px">
+            <div class="small" style="color:var(--muted)">Newsvendor (SLA)</div>
+            <div style="font-size:22px;font-weight:800;color:#f59e0b">4500</div>
+            <div class="small" style="margin-top:6px;color:var(--muted)">SLA-first: lower breach risk</div>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:10px">
+              <input type="radio" name="optChoice" value="nv">
+              <span class="small" style="color:var(--muted)">Choose Newsvendor</span>
+            </label>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+            <div>
+              <div class="small" style="color:var(--muted)">Projected 1-year savings</div>
+              <div style="font-size:18px;font-weight:800;color:#a7f3d0" id="metric_savings1">$19,622</div>
+            </div>
+            <div style="text-align:right">
+              <div class="small" style="color:var(--muted)">Projected 3-year savings</div>
+              <div style="font-size:16px;font-weight:700;color:#bae6fd" id="metric_savings3">$58,867</div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div style="background:rgba(255,255,255,0.02);padding:10px;border-radius:8px">
+              <div class="small" style="color:var(--muted)">Current yearly cost</div>
+              <div style="font-weight:800;color:#fff">$72,345</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.02);padding:10px;border-radius:8px">
+              <div class="small" style="color:var(--muted)">Projected brute cost (yr)</div>
+              <div style="font-weight:800;color:#fff">$52,722</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <div style="flex:1;background:rgba(255,255,255,0.02);padding:10px;border-radius:8px">
+              <div class="small" style="color:var(--muted)">SLA breach minutes (sample)</div>
+              <div style="font-weight:800;color:#ffd6a5">12</div>
+            </div>
+            <div style="flex:1;background:rgba(255,255,255,0.02);padding:10px;border-radius:8px">
+              <div class="small" style="color:var(--muted)">Demand 95th percentile</div>
+              <div style="font-weight:800;color:#ffd6a5">6,200</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;flex-wrap:wrap">
+          <div class="small" style="color:var(--muted)">Last update: Sep 28, 2025</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn" id="applyBtn">Approve & Apply</button>
+            <button class="btn" style="background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);width:110px" id="exportBtn">Export PNG</button>
+          </div>
+        </div>
+      </aside>
+    </section>
+  </div>
+
+  <script>
+    // --- data (from your uploaded samples) --------------------------------------------------
+    const demandData = [{minute:'13:09',slots:5000},{minute:'13:10',slots:4500},{minute:'13:11',slots:5000},{minute:'13:12',slots:5000},{minute:'13:13',slots:5000},{minute:'13:14',slots:5000},{minute:'13:15',slots:5000},{minute:'13:16',slots:5000},{minute:'13:17',slots:4500},{minute:'13:18',slots:5500},{minute:'13:19',slots:500},{minute:'13:20',slots:500},{minute:'13:21',slots:0},{minute:'13:22',slots:4500},{minute:'13:23',slots:4500},{minute:'13:24',slots:4500},{minute:'13:25',slots:500},{minute:'13:26',slots:500},{minute:'13:27',slots:500},{minute:'13:28',slots:0},{minute:'13:29',slots:500},{minute:'13:30',slots:4500},{minute:'13:31',slots:5000},{minute:'13:32',slots:5500},{minute:'13:33',slots:5500},{minute:'13:34',slots:4500},{minute:'13:35',slots:4500},{minute:'13:36',slots:4500},{minute:'13:37',slots:5500},{minute:'13:38',slots:5500},{minute:'13:39',slots:7000},{minute:'13:40',slots:6000},{minute:'13:41',slots:6000},{minute:'13:42',slots:6500},{minute:'13:43',slots:6000},{minute:'13:44',slots:500},{minute:'13:45',slots:6000},{minute:'13:46',slots:4500},{minute:'13:47',slots:500},{minute:'13:48',slots:5500},{minute:'13:49',slots:500},{minute:'13:50',slots:3200},{minute:'13:51',slots:3000},{minute:'13:52',slots:6500},{minute:'13:53',slots:500},{minute:'13:54',slots:0},{minute:'13:55',slots:500},{minute:'13:56',slots:500},{minute:'13:57',slots:500},{minute:'13:58',slots:500},{minute:'13:59',slots:1000},{minute:'14:00',slots:5500},{minute:'14:01',slots:5500},{minute:'14:02',slots:5000},{minute:'14:03',slots:5000},{minute:'14:04',slots:5000},{minute:'14:05',slots:5000},{minute:'14:06',slots:5500},{minute:'14:07',slots:4500},{minute:'14:08',slots:4500},{minute:'14:09',slots:0}];
+
+    const histogramSource=[[5000,17],[4500,26],[5000,17],[5000,19],[5000,24],[5000,27],[5000,26],[5000,24],[4500,11],[5500,10],[500,22],[500,16],[500,19],[4500,12],[500,14],[4500,23],[500,22],[500,19],[500,29],[0,13],[500,13],[4500,30],[500,31],[5000,17],[5500,14],[4500,15],[4500,15],[5500,14],[5500,11],[6000,10],[6000,13],[6500,9],[5500,14],[500,13],[6000,17],[4500,25],[500,10],[3000,6],[6500,9],[500,13],[0,13],[500,12],[500,28],[1000,16],[5500,19],[5500,17],[5000,28],[5000,18],[5500,31],[4500,27],[4500,22],[0,9]];
+
+    const sweepResults=[{baseline:2000,totalCost:200.2},{baseline:2500,totalCost:198.5},{baseline:3000,totalCost:196.8},{baseline:3500,totalCost:192.6},{baseline:4000,totalCost:190.4},{baseline:4500,totalCost:193.2},{baseline:5000,totalCost:197.0},{baseline:5500,totalCost:206.8},{baseline:6000,totalCost:221.1},{baseline:6500,totalCost:237.9},{baseline:7000,totalCost:256.2},{baseline:8000,totalCost:292.8},{baseline:8500,totalCost:311.1}];
+
+    // --- rendering helpers (robust) ------------------------------------------------------
+    function fitCanvasToContainer(canvas){
+      const dpr = window.devicePixelRatio || 1;
+      let rect = canvas.getBoundingClientRect();
+      if((rect.width < 2 || rect.height < 2) && canvas.parentElement){ rect = canvas.parentElement.getBoundingClientRect(); }
+      if((rect.width < 2 || rect.height < 2)){
+        const cs = window.getComputedStyle(canvas);
+        const w = parseFloat(cs.width) || canvas.clientWidth || (canvas.parentElement && canvas.parentElement.clientWidth) || 800;
+        const h = parseFloat(cs.height) || canvas.clientHeight || (canvas.parentElement && canvas.parentElement.clientHeight) || 300;
+        rect = { width: w, height: h };
+      }
+      const w = Math.max(2, Math.floor(rect.width));
+      const h = Math.max(2, Math.floor(rect.height));
+      canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+      canvas.width = Math.max(1, Math.floor(w * dpr)); canvas.height = Math.max(1, Math.floor(h * dpr));
+      const ctx = canvas.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); return ctx;
+    }
+
+    function drawLine(ctx, labels, values, opts){
+      const canvas = ctx.canvas; const w = canvas.clientWidth || parseFloat(canvas.style.width) || 800; const h = canvas.clientHeight || parseFloat(canvas.style.height) || 300;
+      const padLeft = 56, padRight = 16, padTop = 12, padBottom = 48; const innerW = Math.max(10, w - padLeft - padRight); const innerH = Math.max(10, h - padTop - padBottom);
+      ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle='#071126'; ctx.fillRect(0,0,w,h);
+      const guideVals = (opts && opts.guides) ? opts.guides.map(g=>g.value||0) : [];
+      const maxV = Math.max.apply(null, values.concat(guideVals, [1])); const minV=0;
+      // axes
+      ctx.strokeStyle='rgba(148,163,184,0.12)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(padLeft,padTop); ctx.lineTo(padLeft,padTop+innerH); ctx.lineTo(padLeft+innerW,padTop+innerH); ctx.stroke();
+      // y grid
+      ctx.fillStyle='#94a3b8'; ctx.font='12px system-ui'; for(let i=0;i<=4;i++){ const y=padTop+innerH - (i/4)*innerH; const val=Math.round(minV + (i/4)*(maxV-minV)); ctx.fillText(String(val), 8, y+4); ctx.beginPath(); ctx.strokeStyle='rgba(148,163,184,0.06)'; ctx.moveTo(padLeft,y); ctx.lineTo(padLeft+innerW,y); ctx.stroke(); }
+      // points
+      const step = innerW / Math.max(1, labels.length - 1);
+      const pts = values.map((v,i)=>({ x: padLeft + i*step, y: padTop + innerH - ((v-minV)/(maxV-minV||1))*innerH }));
+      // line
+      ctx.strokeStyle = opts.color || '#60a5fa'; ctx.lineWidth = 2; ctx.beginPath(); pts.forEach((p,i)=> i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.stroke();
+      // markers
+      ctx.fillStyle = opts.markerColor || opts.color || '#60a5fa'; pts.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,3,0,2*Math.PI); ctx.fill(); });
+      // guides
+      if(opts.guides){ opts.guides.forEach(g=>{ const y=padTop+innerH - ((g.value-minV)/(maxV-minV||1))*innerH; ctx.setLineDash(g.dash||[6,6]); ctx.strokeStyle=g.color; ctx.beginPath(); ctx.moveTo(padLeft,y); ctx.lineTo(padLeft+innerW,y); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle=g.color; ctx.font='12px system-ui'; ctx.fillText(g.label, padLeft + innerW - 120, y - 6); }); }
+      // x labels
+      ctx.fillStyle='#94a3b8'; for(let i=0;i<labels.length;i+=Math.max(1, Math.floor(labels.length/6))){ ctx.fillText(labels[i], padLeft + i*step - 20, padTop + innerH + 20); }
+    }
+
+    function drawBar(ctx, labels, values, opts){
+      const canvas = ctx.canvas; const w = canvas.clientWidth || parseFloat(canvas.style.width) || 400; const h = canvas.clientHeight || parseFloat(canvas.style.height) || 200;
+      const padLeft=56, padRight=12, padTop=12, padBottom=36; const innerW = Math.max(10, w-padLeft-padRight), innerH = Math.max(10, h-padTop-padBottom);
+      ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle='#071126'; ctx.fillRect(0,0,w,h);
+      const maxV = Math.max.apply(null, values.concat([1])); ctx.strokeStyle='rgba(148,163,184,0.12)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(padLeft,padTop); ctx.lineTo(padLeft,padTop+innerH); ctx.lineTo(padLeft+innerW,padTop+innerH); ctx.stroke();
+      const barW = innerW / values.length * 0.7; const gap = (innerW - barW*values.length)/Math.max(1,values.length-1);
+      ctx.fillStyle = opts.color || '#60a5fa'; for(let i=0;i<values.length;i++){ const x = padLeft + i*(barW+gap); const hbar = (values[i]/(maxV||1))*innerH; ctx.fillRect(x, padTop+innerH-hbar, barW, hbar); }
+      ctx.fillStyle='#94a3b8'; ctx.font='12px system-ui'; for(let i=0;i<labels.length;i+=Math.max(1,Math.floor(labels.length/8))){ ctx.fillText(labels[i], padLeft + i*(barW+gap), padTop+innerH+16); }
+    }
+
+    // --- orchestration --------------------------------------------------------------------
+    function redrawAll(){
+      const demandCanvas = document.getElementById('demandChart'); const histCanvas = document.getElementById('histogramChart'); const sweepCanvas = document.getElementById('sweepChart');
+      const dctx = fitCanvasToContainer(demandCanvas); const hctx = fitCanvasToContainer(histCanvas); const sctx = fitCanvasToContainer(sweepCanvas);
+
+      const demandLabels = demandData.map(d=>d.minute);
+      const demandValues = demandData.map(d=>d.slots);
+
+      // histogram aggregation from histogramSource
+      const agg = {}; histogramSource.forEach(function(p){ const s=Number(p[0]); const sec=Number(p[1]); agg[s]=(agg[s]||0)+sec; });
+      const bins = Object.keys(agg).map(k=>Number(k)).sort((a,b)=>a-b); const secondsPerBin = bins.map(b=>agg[b]);
+
+      const sweepLabels = sweepResults.map(r=>String(r.baseline)); const sweepValues = sweepResults.map(r=>r.totalCost);
+
+      drawLine(dctx, demandLabels, demandValues, { color:'#f97316', markerColor:'#fb923c', guides:[{value:4000,label:'Brute 4000',color:'#58c98a',dash:[6,6]},{value:4500,label:'Newsvendor 4500',color:'#ffaf33',dash:[6,6]},{value:4400,label:'Current 4400',color:'#ff453a',dash:[4,4]}] });
+      drawBar(hctx, bins.map(b=>String(b)), secondsPerBin, { color:'#60a5fa'});
+      drawLine(sctx, sweepLabels, sweepValues, { color:'#38bdf8' });
+    }
+
+    // --- UI wiring -----------------------------------------------------------------------
+    const savings = { sweep: { year1: "$19,622", year3: "$58,867" }, nv: { year1: "$-5,145", year3: "$-15,437" } };
+    function updateSavings(option){ document.getElementById('metric_savings1').textContent = savings[option].year1; document.getElementById('metric_savings3').textContent = savings[option].year3; }
+
+    function init(){
+      // initial draw after layout settles
+      setTimeout(redrawAll, 40);
+      window.addEventListener('resize', function(){ clearTimeout(window.__resizeTimeout); window.__resizeTimeout=setTimeout(redrawAll, 120); });
+
+      document.getElementById('exportBtn').addEventListener('click', function(){
+        try{
+          const leftCanvas = document.createElement('canvas'); leftCanvas.width=1200; leftCanvas.height=900; const lc=leftCanvas.getContext('2d'); lc.fillStyle='#071126'; lc.fillRect(0,0,leftCanvas.width,leftCanvas.height);
+          const d=document.getElementById('demandChart'); lc.drawImage(d,20,20,1160,360);
+          const h=document.getElementById('histogramChart'); lc.drawImage(h,20,400,560,300);
+          const s=document.getElementById('sweepChart'); lc.drawImage(s,620,400,560,300);
+          const dataUrl=leftCanvas.toDataURL('image/png'); const a=document.createElement('a'); a.href=dataUrl; a.download='bq-slot-optimization.png'; document.body.appendChild(a); a.click(); a.remove();
+        }catch(e){ alert('Export failed: '+e.message); }
+      });
+
+      const radios = document.getElementsByName('optChoice'); for(let i=0;i<radios.length;i++){ radios[i].addEventListener('change', function(){ if(this.checked){ updateSavings(this.value); } }); }
+
+      document.getElementById('refreshBtn').addEventListener('click', function(){ redrawAll(); });
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
