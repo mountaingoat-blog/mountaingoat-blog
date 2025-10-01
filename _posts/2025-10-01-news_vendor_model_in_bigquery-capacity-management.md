@@ -6,8 +6,6 @@ categories: bigquery finops capacity
 tags: [bigquery, finops, capacity, newsvendor]
 ---
 
-# Newsvendor Model in BigQuery Capacity Management
-
 When talking about optimizing **BigQuery slots**, one of the decision-making tools I applied was the **Newsvendor Model**. It may sound like just another statistical method, but in practice, it’s one of the clearest ways to understand cost-performance tradeoffs when slot usage is uncertain or random.
 
 ---
