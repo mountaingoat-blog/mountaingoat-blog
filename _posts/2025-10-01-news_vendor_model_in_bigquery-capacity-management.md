@@ -41,7 +41,7 @@ This is where the **Newsvendor model** comes in.
 * Underage cost (Cu) = difference = **0.06 − 0.036 = $0.024**
 
 **Step 2: Compute Critical Ratio (CR)**
-[ CR = \frac{Cu}{Cu + Co} = \frac{0.024}{0.024 + 0.036} = 0.4 ]
+CR = (Cu)/(Cu + Co) = (0.024)/(0.024 + 0.036) = 0.4
 
 **Step 3: Find Percentile from Demand Distribution**
 
@@ -68,4 +68,5 @@ By looking at the **Newsvendor model**:
 
 ### Summary
 
-With **CR = 0.4**, the Newsvendor model recommended **4500 slots** as the optimal baseline. This method gave me a structured, data-driven way to balance **committed cost efficiency** with **autoscale performance risk** in BigQuery FinOps.
+With **CR = 0.4**, the Newsvendor model recommended **4500 slots** as the optimal baseline. 
+This model gave me a structured, data-driven way to balance **committed cost efficiency** with **autoscale performance risk** in BigQuery.
