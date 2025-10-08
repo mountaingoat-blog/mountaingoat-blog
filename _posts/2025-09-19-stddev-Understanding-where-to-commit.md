@@ -1,4 +1,4 @@
-# 📊 Standard Deviation in Capacity Management and Forecasting
+ 📊 Standard Deviation in Capacity Management and Forecasting
 
 When we talk about optimizing systems like **BigQuery slots** or predicting trends such as **gold prices**, one concept keeps surfacing: **Standard Deviation**.  
 
