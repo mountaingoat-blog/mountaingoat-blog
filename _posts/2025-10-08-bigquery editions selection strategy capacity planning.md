@@ -1,9 +1,5 @@
 # BigQuery Slot Optimization — Practical Insights for Edition Selection Strategy and Capacity Planning
 
-**Author:** SivaAnanth M  
-**Tags:** BigQuery, FinOps, GCP, Cloud Architecture, Cost Optimization 
-**Published on:** mountaingoat.in  
-
 ---
 
 ## Introduction
@@ -30,13 +26,13 @@ The following phased approach helps identify the right reservation baseline and 
    - Allows collection of early workload patterns.
 
 2. **Collect metadata** from:  
-INFORMATION_SCHEMA.JOBS_BY_PROJECT
+INFORMATION_SCHEMA.JOBS_BY_PROJECT, 
 INFORMATION_SCHEMA.JOBS_BY_ORGANIZATION
 
 
-3. **Derive slot consumption** 
+3. **Derive actual slot usage** 
 
-4. **Aggregate and analyze** minute/hourly/daily slot usage to calculate percentiles such as P50, P80, and P95.
+4. **Aggregate and analyze** minute/daily slot usage to calculate percentiles such as P50, P80, and P95. Could be noisy, change it to hourly/daily.
 These form the baseline and there are other models I've put in force in the previous posts for capacity recommendations.
 
 5. **Simulate reservation models** using methods such as the *Brute Force Sweep* or *Newsvendor* approach to test how different reservation sizes impact cost and SLA trade-offs.
@@ -58,6 +54,7 @@ The current editions-based pricing model introduces **autoscaling** for short-te
 **Key fact:**  
 > All BigQuery editions run on the **same underlying compute infrastructure**.  
 > Differences in SLA, concurrency, and governance come from service-level guarantees and feature sets — not from hardware differences.
+> Keep a check on the pricing and other key capabilities including SLA, as Google could change these down the line.
 
 ---
 
@@ -85,7 +82,7 @@ However, these models:
 - Perform lightweight slot-hour simulations across percentile windows.  
 - Complete within seconds for typical datasets.
 
-Hence, the compute impact is minimal and easily scalable for multiple reservations.
+Hence, the compute impact is minimal and easily scalable for multiple reservations or aggregated ones at organization level.
 
 ---
 
@@ -140,11 +137,10 @@ This matrix can evolve as Google refines its product tiers and pricing.
 ## 8. Key Takeaways
 
 - Start with **Standard Edition (on-demand)** to capture early usage data.  
-- Move to **Enterprise Edition** once slot utilization stabilizes.  
-- **Flex Slots are deprecated** — use Editions + Autoscaling instead.  
+- Move to **Enterprise Edition(s)** once slot utilization stabilizes.  Again, governance features could play a key role here.
 - **All editions share the same compute fabric**, differing only by feature and SLA.  
 - Maintain **region-specific reservations**, and aggregate insights at the org level.  
-- Implement a **policy-based FinOps framework** for continuous validation.
+- Implement a **policy-based FinOps framework** for continuous validation of Editions selection strategy.
 
 ---
 
@@ -154,7 +150,7 @@ BigQuery slot optimization isn’t just a cost exercise — it’s an architectu
 
 By combining **statistical models**, **edition-based pricing analysis**, and **FinOps-driven policy automation**, teams can continuously align their BigQuery investments with real workload behavior.
 
-The outcome is not just savings — it’s **confidence in your data infrastructure’s efficiency and scalability**.
+The outcome is not just about savings alone — it’s **confidence in your data infrastructure’s efficiency and scalability**.
 
 ---
 
