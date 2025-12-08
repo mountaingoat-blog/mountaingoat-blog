@@ -7,147 +7,130 @@ tags: [gold, ingestion, knime, aws, eventbridge, s3]
 ---
 
 This architecture powers the continuous ingestion, syncing, and automated curation of all datasets required for Gold Prediction at Mountaingoat.  
-It integrates Python-based data fetchers, Lightsail Object Storage, a central AWS S3 lake, EventBridge-based event routing, and KNIME batch workflows for automated dataset curation.
+It integrates Python-based data fetchers, Lightsail Object Storage, a central AWS S3 datalake, EventBridge-based event routing, and KNIME batch workflow for automated dataset curation.
 
 ---
 
-## **1. Data Fetching Layer (Lightsail VM)**
+## 1. Data Fetching Layer (Lightsail VM)
 
-A Lightsail VM runs cron-scheduled Python fetchers that pull gold and macroeconomic data from external APIs and store them in Lightsail Object Storage.
+A Lightsail VM runs Python fetchers that pull gold and macroeconomic data from external APIs and store them in Lightsail Object Storage.
 
-### **Gold Fetchers**
-- **`fetch_one_day_ohlc_parquet.py`**  
-  Fetches XAU/USD *daily* OHLC from TwelveData and writes a **single-row Parquet** file.
+### Gold Fetchers
 
-- **`fetch_one_hour_ohlc_parquet.py`**  
-  Fetches XAU/USD *hourly* OHLC and writes a **single-row Parquet** file.
+**fetch_one_day_ohlc_parquet.py**  
+Fetches XAU/USD daily OHLC from TwelveData and writes a single-row Parquet file.
 
-### **FRED Fetcher**
-- **`pull_fred_series_to_s3_csv_dedupe.py`**  
-  Downloads macroeconomic series (DFF, DFII10, DGS10, DGS2, DTWEXBGS, VIXCLS, DCOILWTICO).  
-  Uploads CSV **only if the latest observation changed**, reducing redundant writes.
+**fetch_one_hour_ohlc_parquet.py**  
+Fetches XAU/USD hourly OHLC and writes a single-row Parquet file.
 
-2. Sync Layer — Lightsail → AWS S3
+### FRED Fetcher
 
-A sync script periodically copies new raw files from Lightsail into the central AWS S3 bucket gold-prediction-01.
+**pull_fred_series_to_s3_csv_dedupe.py**  
+Downloads macroeconomic series (DFF, DFII10, DGS10, DGS2, DTWEXBGS, VIXCLS, DCOILWTICO) and uploads CSV only if the latest observation has changed.
 
-Sync Script
-lightsail_sync_full.sh
+All outputs are stored in Lightsail Object Storage (S3-compatible).
 
-Sync Flow
+---
 
-Lightsail bucket → local temporary directory
+## 2. Sync Layer — Lightsail → AWS S3
 
-Local temporary directory → AWS S3 (gold-prediction-01)
+A sync script periodically copies all new raw files from Lightsail to the AWS S3 bucket `gold-prediction-01`.
+
+### Sync Script
+
+    lightsail_sync_full.sh
+
+### Sync Flow
+
+1. Lightsail bucket → local temporary directory  
+2. Local temporary directory → AWS S3 (gold-prediction-01)
 
 AWS S3 becomes the single source of truth for all raw data.
 
-3. Event Routing via EventBridge
+---
 
-EventBridge rules watch S3 prefixes and forward matching object creation events to an SQS queue.
+## 3. Event Routing via EventBridge
 
-Examples of monitored prefixes:
+EventBridge monitors S3 prefixes and forwards object-created events to SQS.
 
-GOLD_OHLC_Daily_Rate_USD/
+### Monitored Prefixes
 
-GOLD_OHLC_Live_Rate_USD/
+- GOLD_OHLC_Daily_Rate_USD/  
+- GOLD_OHLC_Live_Rate_USD/  
+- us-macro-economic-data/DFF/  
+- us-macro-economic-data/VIXCLS/  
 
-us-macro-economic-data/DFF/
+### Destination Queue
 
-us-macro-economic-data/VIXCLS/
+**knime-gold-events**
 
-Destination queue:
+Every new file triggers an SQS event.
 
-knime-gold-events
+---
 
+## 4. KNIME Poller on the KNIME Server
 
-Every new file → EventBridge → SQS.
+A custom poller continuously listens to SQS and triggers the matching KNIME workflow.
 
-4. KNIME Poller on the KNIME Server
+### Poller Path
 
-A custom poller script continuously listens to SQS and automatically triggers the corresponding KNIME workflow.
+    /mnt/knime-data/poller/bin/knime-gold-poller-single.sh
 
-Poller Script:
-/mnt/knime-data/poller/bin/knime-gold-poller-single.sh
+### Poller Responsibilities
 
-Poller Responsibilities
+- Long-poll SQS  
+- Extract S3 object key from event  
+- Map prefix to KNIME workflow  
+- Create per-run temp directory  
+- Invoke KNIME in batch mode  
 
-Long-poll SQS (20 seconds)
+### KNIME Batch Invocation
 
-Parse detail.object.key
+    knime --launcher.suppressErrors -nosplash -nosave \
+      -application org.knime.product.KNIME_BATCH_APPLICATION \
+      -workflowDir="<workflow>" \
+      -reset -consoleLog -Xmx6G
 
-Map prefix → KNIME workflow directory
+### Message Handling
 
-Create per-run KNIME temp folder
+- On success → delete message  
+- On failure → message stays for retry  
+- Per-run logs stored for debugging  
 
-Execute KNIME in batch mode:
+This forms a fully event-driven ETL pipeline.
 
-knime -nosplash -nosave \
-  -application org.knime.product.KNIME_BATCH_APPLICATION \
-  -workflowDir="<workflow>" \
-  -reset -consoleLog -Xmx6G
+---
 
-Message Handling Logic
+## 5. KNIME Workflow Layer — Initial Curation
 
-Success: delete message from SQS
+Each workflow performs:
 
-Failure: leave message → retry → DLQ
+- Deduplication  
+- Type casting  
+- Timestamp normalization  
+- Sorting  
+- Merging with historical curated data  
+- Schema enforcement  
 
-Logs recorded per message for debugging
+### Curated Outputs (Parquet)
 
-This makes KNIME fully event-driven.
+- GOLD_USD_DAILY_OHLC.snappy.parquet  
+- GOLD_USD_HOURLY_OHLC.snappy.parquet  
+- DFF.snappy.parquet  
+- VIXCLS.snappy.parquet  
 
-5. KNIME Workflow Layer — Initial Curation
+These curated files feed downstream ML forecasting pipelines.
 
-Each KNIME workflow performs essential curation:
+---
 
-Deduplication
+## 6. End-to-End Summary
 
-Type conversions
+This architecture enables:
 
-Timestamp parsing and sorting
+- Continuous ingestion of gold & macroeconomic data  
+- Reliable synchronization and centralized raw storage  
+- Event-driven ETL using EventBridge + SQS + KNIME  
+- Automated curated Parquet datasets  
+- Zero manual intervention for hourly/daily updates  
 
-Schema standardization
-
-Merging with historical curated data
-
-The curated output is saved back to S3 as Parquet.
-
-Final Output Examples
-
-GOLD_USD_DAILY_OHLC.snappy.parquet
-
-GOLD_USD_HOURLY_OHLC.snappy.parquet
-
-DFF.snappy.parquet
-
-VIXCLS.snappy.parquet
-
-These curated datasets are used by ML pipelines for forecasting.
-
-6. Workflow Deployment (Desktop → KNIME Server)
-Create ZIP
-zip -r US_MACRO_ECONOMIC_VIXCLS_DATA_ETL.zip US_MACRO_ECONOMIC_VIXCLS_DATA_ETL
-
-Upload to server
-scp -i gold-etl-ml-01.pem workflow.zip ubuntu@<knime-server>:/mnt/knime-data/
-
-Extract workflow
-unzip workflow.zip -d workflows
-
-
-Once unzipped, the poller automatically triggers the workflow when relevant data arrives.
-
-7. End-to-End Summary
-
-This architecture delivers:
-
-Fully automated ingestion of gold & macroeconomic datasets
-
-Reliable synchronization and centralized raw storage in AWS S3
-
-Event-driven ETL via EventBridge → SQS → KNIME
-
-Continuous curated output in Parquet format
-
-Zero manual intervention
+This serves as the backbone of the Mountaingoat Gold Prediction Platform.
